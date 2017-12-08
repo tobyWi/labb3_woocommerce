@@ -67,11 +67,17 @@ add_action('plugins_loaded', function() {
             return;
         }
 
-        private function createPayPalInvoice(WC_Order $order)
+        private function createPayPalInvoice($order)
         {
+            //die(var_dump($this->getAccessToken()));
+            if (get_transient('paypal_access_token') !== false) {
+            }
+
+            $token = get_transient('paypal_access_token');
+
             $body = [
                 'merchant_info' => [
-                    'email' => 'jakobjohansson2@icloud.com',
+                    'email' => 'jakobjohansson2-facilitator@icloud.com',
                     'first_name' => 'Jakob',
                     'last_name' => 'Johansson',
                     'business_name' => 'Woo'
@@ -96,11 +102,37 @@ add_action('plugins_loaded', function() {
             $response = wp_remote_post($this->invoiceUrl, [
                 'method' => 'POST',
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->get_option('sandbox_token')
+                    'Authorization' => 'Bearer ' . $this->get_option('sandbox_token'),
+                    'Content-Type' => 'application/json'
                 ],
                 'body' => json_encode($body)
             ]);
-            die(var_dump($response['body']));
+
+            $response =json_decode($response['body'], true);
+
+            // PUT THIS IN META FIELD!
+            $invoiceId = $response['id'];
+        }
+
+        private function getAccessToken()
+        {
+            $response = wp_remote_post('https://api.sandbox.paypal.com/v1/oauth2/token', [
+                'method' => 'POST',
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Basic ' . base64_encode($this->get_option('client_id') . ':' . $this->get_option('client_secret'))
+                ],
+                'body' => [
+                    'client_id' => $this->get_option('client_id'),
+                    'client_secret' => $this->get_option('client_secret'),
+                    'grant_type' => 'client_credentials'
+                ]
+            ]);
+
+            set_transient('paypal_access_token', $response['body']['Access-Token']);
+
+            return $response['body'];
         }
     }
 });
