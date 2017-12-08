@@ -7,10 +7,8 @@ Authors: Tobias & Jakob
 */
 
 
-
 function best_selling_products_function( $args ) {
 
- 
 	$args =  [
 		'post_type'			=> 'product',
 		'meta_key' 			=> 'total_sales',
@@ -20,17 +18,43 @@ function best_selling_products_function( $args ) {
 
 
 	$loop = new WP_Query($args);
-	exit(var_dump($loop));
+
 
 	if ( $loop->have_posts() ) {
-			while ( $loop->have_posts() ) : $loop->the_post();
-				the_title();
-				the_excerpt();
-				echo $loop->price;
-			endwhile;
+
+		echo '
+			<table>
+				<tr>
+					<th>Title</th>
+					<th>Description</th>
+					<th>Price</th>
+				</tr>
+		';
+
+		while ( $loop->have_posts() ) : $loop->the_post();
+
+			global $product;
+
+			echo '
+				<tr>
+					<td><a href="'. get_the_permalink() .'">' . get_the_title() . '</a></td>
+					<td>' . get_the_excerpt() . '</td>
+					<td>' . $product->price . '</td>
+				</tr>
+			';
+			
+		endwhile;
+
+
+		echo '</table>';	
+
+
 		} else {
+
 			echo __( 'No products found' );
+
 		}
+
 		wp_reset_postdata();
 		
 }
