@@ -10,24 +10,29 @@ Authors: Tobias & Jakob
 
 function best_selling_products_function( $args ) {
 
-	if ( storefront_is_woocommerce_activated() ) {
-		$args = apply_filters( 'storefront_best_selling_products_args', array(
-		'limit'   => 10,
-		'columns' => 3,
-		'title'      => esc_attr__( 'Best Sellers', 'storefront' ),
-		) );
+ 
+	$args =  [
+		'post_type'			=> 'product',
+		'meta_key' 			=> 'total_sales',
+		'order_by'			=> 'meta_value_num',
+		'posts_per_page'	=> 10
+	];
+
+
+	$loop = new WP_Query($args);
+	exit(var_dump($loop));
+
+	if ( $loop->have_posts() ) {
+			while ( $loop->have_posts() ) : $loop->the_post();
+				the_title();
+				the_excerpt();
+				echo $loop->price;
+			endwhile;
+		} else {
+			echo __( 'No products found' );
+		}
+		wp_reset_postdata();
 		
-		echo '<section class=”storefront-product-section storefront-best-selling-products” aria-label=”Best Selling Products”>';
-
-
-			echo storefront_do_shortcode( 'best_selling_products', array(
-				'per_page' => intval( $args['limit'] ),
-				'columns'  => intval( $args['columns'] ),
-				) 
-			);
-	
-		echo '</section>';
-	}
 }
 add_shortcode( 'best_sellers', 'best_selling_products_function' );
 
