@@ -45,11 +45,18 @@ function improvedShippingInit() {
                 $customerCode = substr_replace($customerCode, "%20", 3, 0);
 
                 $shopCode = substr_replace($this->get_option('shopcode'), "%20", 3, 0);
+
                 $key = 'AIzaSyALKvUxRK3y5KHlkdCh9DfXb6L80qOJYwY';
                 $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$shopCode}&destinations={$customerCode}&region=SE&units=metric&key={$key}";
 
-                $distance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
-                $distance = $distance->rows[0]->elements[0]->distance->value;
+                // Check for cache!
+                if (get_transient($customerCode . $shopCode) !== false) {
+                    $distance = get_transient($customerCode . $shopCode);
+                } else {
+                    $distance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
+                    $distance = $distance->rows[0]->elements[0]->distance->value;
+                    set_transient($customerCode . $shopCode, $distance);
+                }
 
                 // Make distance into km.
                 $distance = $distance / 1000;
