@@ -77,25 +77,27 @@ function improvedShippingInit() {
                     // Make distance into km.
                     $distance = $distance / 1000;
 
-                    $cost = $this->getBikeCost($totalWeight);
-                } else {
-                    if ($distance < 10) {
-                        $distance = 10;
-                    }
+                    // Register the rate for bikes
+                    $this->add_rate(array(
+                        'id' => $this->id . 'bike',
+                        'label' => 'Bike shipping',
+                        'cost' => $this->getBikeCost($totalWeight),
+                        'calc_tax' => 'per_item'
+                    ));
 
-                    $cost = $this->getCost($totalWeight, $distance);
                 }
 
-                // Now use the algorithm to calculate the shipping cost.
-                $rate = array(
-                    'id' => $this->id,
-                    'label' => 'Distance shipping',
-                    'cost' => $cost,
-                    'calc_tax' => 'per_item'
-                );
+                if ($distance < 10) {
+                    $distance = 10;
+                }
 
-                // Register the rate
-                $this->add_rate( $rate );
+                // Register the normal rate
+                $this->add_rate(array(
+                    'id' => $this->id,
+                    'label' => 'Normal shipping',
+                    'cost' => $this->getCost($totalWeight, $distance),
+                    'calc_tax' => 'per_item'
+                ));
             }
 
             private function getCost($weight, $distance)
