@@ -51,11 +51,32 @@ function improvedShippingInit() {
                 $distance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
                 $distance = $distance->rows[0]->elements[0]->distance->value;
 
+                // Make distance into km.
+                $distance = $distance / 1000;
+
+                // Check if bicycle shipping can be applied.
+                if ($totalWeight < 5 && $distance < 10) {
+                    $url .= '&mode=bicycling';
+                    $distance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
+                    $distance = $distance->rows[0]->elements[0]->distance->value;
+
+                    // Make distance into km.
+                    $distance = $distance / 1000;
+
+                    $cost = $this->getBikeCost($totalWeight);
+                } else {
+                    if ($distance < 10) {
+                        $distance = 10;
+                    }
+
+                    $cost = $this->getCost($totalWeight, $distance);
+                }
+
                 // Now use the algorithm to calculate the shipping cost.
                 $rate = array(
                     'id' => $this->id,
                     'label' => 'Distance shipping',
-                    'cost' => $this->getCost($totalWeight, $distance),
+                    'cost' => $cost,
                     'calc_tax' => 'per_item'
                 );
 
@@ -76,6 +97,15 @@ function improvedShippingInit() {
                 }
 
                 return $weight * 100;
+            }
+
+            private function getBikeCost($weight)
+            {
+                if ($weight < 1) {
+                    return 15;
+                } elseif ($weight < 5) {
+                    return 30;
+                }
             }
         }
     }
