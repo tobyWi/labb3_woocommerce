@@ -58,6 +58,8 @@ function improvedShippingInit() {
                     set_transient('regular' . $customerCode . $shopCode, $distance);
                 }
 
+                // Lägg till rate flre man byter distance.
+
                 // Make distance into km.
                 $distance = $distance / 1000;
 
@@ -102,6 +104,7 @@ function improvedShippingInit() {
 
             private function getCost($weight, $distance)
             {
+                // GÖR OM
                 if ($weight < 1) {
                     return 30 * $distance;
                 } elseif ($weight < 5) {
@@ -117,6 +120,7 @@ function improvedShippingInit() {
 
             private function getBikeCost($weight)
             {
+                // GÖR OM
                 if ($weight < 1) {
                     return 15;
                 } elseif ($weight < 5) {

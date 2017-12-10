@@ -69,11 +69,7 @@ add_action('plugins_loaded', function() {
 
         private function createPayPalInvoice($order)
         {
-            //die(var_dump($this->getAccessToken()));
-            if (get_transient('paypal_access_token') !== false) {
-            }
-
-            $token = get_transient('paypal_access_token');
+            $token = $this->getAccessToken();
 
             $body = [
                 'merchant_info' => [
@@ -91,7 +87,7 @@ add_action('plugins_loaded', function() {
                         'state' => $order->get_shipping_state(),
                     ]
                 ],
-                'shippig_cost' => [
+                'shipping_cost' => [
                     'amount' => [
                         'currency' => $order->get_currency(),
                         'value' => $order->get_total()
@@ -108,14 +104,19 @@ add_action('plugins_loaded', function() {
                 'body' => json_encode($body)
             ]);
 
-            $response =json_decode($response['body'], true);
+            $response = json_decode($response['body'], true);
 
             // PUT THIS IN META FIELD!
+            // Sätt order som Mottage(inväntar betalning)
             $invoiceId = $response['id'];
         }
 
         private function getAccessToken()
         {
+            // Kolla om access token finns i databasen
+            // Kolla om access token har gått ut
+            // Annars gör en request och få en ny access token
+
             $response = wp_remote_post('https://api.sandbox.paypal.com/v1/oauth2/token', [
                 'method' => 'POST',
                 'headers' => [
