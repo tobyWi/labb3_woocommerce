@@ -82,16 +82,16 @@ function update_imported_products()
                 'post_type'		=>	'product',
                 'meta_query'	=>	array(
                 	array(
-                		'_sku'	=>	$row[0]
+                        'key' => '_sku',
+                		'value'	=>	$row[0]
                 	)
                 )
             ));
 
-            if ($product->has_posts()) {
-                while ($product->has_posts()) {
-                    $id = $product->the_post()->post_id;
-                    break;
-                }
+            if ($product->have_posts()) {
+               
+                $id = $product->posts[0]->ID;
+                 
             } else {
                 // Insert the post.
                 $id = wp_insert_post([
