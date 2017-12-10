@@ -7,6 +7,9 @@
 add_action('plugins_loaded', function() {
     class PaypalPayment extends WC_Payment_Gateway
     {
+        /**
+         * Create a new PaypalPayment instance.
+         */
         public function __construct()
         {
             $this->id = 'paypal_payment';
@@ -21,6 +24,11 @@ add_action('plugins_loaded', function() {
             add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         }
 
+        /**
+         * Add administrator fields.
+         *
+         * @return void
+         */
         public function init_form_fields()
         {
             $this->form_fields = array(
@@ -37,40 +45,45 @@ add_action('plugins_loaded', function() {
                 'client_secret' => array(
                     'title' => __( 'Client Secret', 'woocommerce' ),
                     'type' => 'text',
-                ),
-                'sandbox_token' => array(
-                    'title' => __( 'Sandbox Access Token', 'woocommerce' ),
-                    'type' => 'text',
-                ),
+                )
             );
         }
 
-        public function process_payment( $order_id ) {
+        /**
+         * Process the order and create an invoid.
+         *
+         * @param  int $order_id
+         * @return mixed
+         */
+        public function process_payment($order_id) {
             global $woocommerce;
-            $order = new WC_Order( $order_id );
+            $order = new WC_Order($order_id);
 
             if ($this->get_option('enabled')) {
-                $order->update_status('on-hold', __( 'Awaiting paypal payment', 'woocommerce' ));
-
                 $this->createPayPalInvoice($order);
 
+                $order->update_status('on-hold', __('Received (Awaiting payment)', 'woocommerce'));
                 $order->reduce_order_stock();
                 $woocommerce->cart->empty_cart();
 
                 return array(
                     'result' => 'success',
-                    'redirect' => $this->get_return_url( $order )
+                    'redirect' => $this->get_return_url($order)
                 );
             }
 
-            wc_add_notice('Wrong paypal stuff.', 'error' );
+            wc_add_notice('Wrong paypal stuff.', 'error');
             return;
         }
 
+        /**
+         * Create an invoice through PayPal.
+         *
+         * @param  mixed $order
+         * @return void
+         */
         private function createPayPalInvoice($order)
         {
-            $token = $this->getAccessToken();
-
             $body = [
                 'merchant_info' => [
                     'email' => 'jakobjohansson2-facilitator@icloud.com',
@@ -95,33 +108,36 @@ add_action('plugins_loaded', function() {
                 ]
             ];
 
-            $response = wp_remote_post($this->invoiceUrl, [
+            $response = wp_remote_retrieve_body(wp_remote_post($this->invoiceUrl, [
                 'method' => 'POST',
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->get_option('sandbox_token'),
+                    'Authorization' => 'Bearer ' . $this->getAccessToken(),
                     'Content-Type' => 'application/json'
                 ],
                 'body' => json_encode($body)
-            ]);
+            ]));
 
-            $response = json_decode($response['body'], true);
+            $response = json_decode($response, true);
 
-            // PUT THIS IN META FIELD!
-            // Sätt order som Mottage(inväntar betalning)
-            $invoiceId = $response['id'];
+            update_post_meta($order->get_id(), 'paypal_invoice_id', $response['id']);
         }
 
+        /**
+         * Get the paypal access token.
+         *
+         * @return string
+         */
         private function getAccessToken()
         {
-            // Kolla om access token finns i databasen
-            // Kolla om access token har gått ut
-            // Annars gör en request och få en ny access token
+            if (time() < $this->get_option('paypal_access_token_expires_at')) {
+                return $this->get_option('paypal_access_token');
+            }
 
-            $response = wp_remote_post('https://api.sandbox.paypal.com/v1/oauth2/token', [
+            $response = wp_remote_retrieve_body(wp_remote_post('https://api.sandbox.paypal.com/v1/oauth2/token', [
                 'method' => 'POST',
                 'headers' => [
                     'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
+                    'Content-Type' => 'application/x-www-form-urlencoded',
                     'Authorization' => 'Basic ' . base64_encode($this->get_option('client_id') . ':' . $this->get_option('client_secret'))
                 ],
                 'body' => [
@@ -129,18 +145,21 @@ add_action('plugins_loaded', function() {
                     'client_secret' => $this->get_option('client_secret'),
                     'grant_type' => 'client_credentials'
                 ]
-            ]);
+            ]));
 
-            set_transient('paypal_access_token', $response['body']['Access-Token']);
+            $response = json_decode($response, true);
 
-            return $response['body'];
+            add_option('paypal_access_token', $response['access_token']);
+            add_option('paypal_access_token_expires_at', time() + $response['expires_in']);
+
+            return $response['access_token'];
         }
     }
 });
 
-function add_paypal_payment( $methods ) {
+function add_paypal_payment($methods) {
     $methods[] = 'PaypalPayment';
     return $methods;
 }
 
-add_filter( 'woocommerce_payment_gateways', 'add_paypal_payment' );
+add_filter('woocommerce_payment_gateways', 'add_paypal_payment');
