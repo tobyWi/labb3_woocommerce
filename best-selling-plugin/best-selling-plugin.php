@@ -1,9 +1,9 @@
 <?php 
 
 
-/*
-Plugin Name: Best selling products
-Authors: Tobias & Jakob
+/**
+* Plugin Name: Best selling products
+* Authors: Tobias & Jakob
 */
 
 
