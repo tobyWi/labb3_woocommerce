@@ -12,7 +12,7 @@ function best_selling_products_function( $args ) {
 	$args =  [
 		'post_type'			=> 'product',
 		'meta_key' 			=> 'total_sales',
-		'order_by'			=> 'meta_value_num',
+		'orderby'			=> 'meta_value_num',
 		'posts_per_page'	=> 10
 	];
 
@@ -39,7 +39,7 @@ function best_selling_products_function( $args ) {
 				<tr>
 					<td><a href="'. get_the_permalink() .'">' . get_the_title() . '</a></td>
 					<td>' . get_the_excerpt() . '</td>
-					<td>' . $product->price . '</td>
+					<td>' . $product->get_price() . '</td>
 				</tr>
 			';
 			
