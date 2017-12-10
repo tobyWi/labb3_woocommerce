@@ -35,6 +35,7 @@ add_action('woocommerce_checkout_process', function() {
 add_action('woocommerce_checkout_update_order_meta', function($id) {
     if (isset($_POST['gift_wrap_option'])) {
         update_post_meta($id, 'gift_wrap_message', sanitize_text_field($_POST['gift_wrap_message']));
+        update_post_meta($id, 'gift_wrap_option', true);
     }
 });
 
