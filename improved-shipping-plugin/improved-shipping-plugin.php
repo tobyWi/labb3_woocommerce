@@ -13,6 +13,7 @@ function improvedShippingInit() {
 
                 $this->enabled            = "yes";
                 $this->title              = "Improved Shipping";
+                $this->key = 'AIzaSyALKvUxRK3y5KHlkdCh9DfXb6L80qOJYwY';
 
                 $this->init();
             }
@@ -46,8 +47,7 @@ function improvedShippingInit() {
 
                 $shopCode = substr_replace($this->get_option('shopcode'), "%20", 3, 0);
 
-                $key = 'AIzaSyALKvUxRK3y5KHlkdCh9DfXb6L80qOJYwY';
-                $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$shopCode}&destinations={$customerCode}&region=SE&units=metric&key={$key}";
+                $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$shopCode}&destinations={$customerCode}&region=SE&units=metric&key={$this->key}";
 
                 // Check for cache!
                 if (get_transient('regular' . $customerCode . $shopCode) !== false) {
@@ -58,38 +58,11 @@ function improvedShippingInit() {
                     set_transient('regular' . $customerCode . $shopCode, $distance);
                 }
 
-                // Lägg till rate flre man byter distance.
-
                 // Make distance into km.
                 $distance = $distance / 1000;
 
-                // Check if bicycle shipping can be applied.
-                if ($totalWeight < 5 && $distance < 10) {
-                    $url .= '&mode=bicycling';
-
-                    // Check for cache!
-                    if (get_transient('bicycle' . $customerCode . $shopCode) !== false) {
-                        $distance = get_transient('bicycle' . $customerCode . $shopCode);
-                    } else {
-                        $distance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
-                        $distance = $distance->rows[0]->elements[0]->distance->value;
-                        set_transient('bicycle' . $customerCode . $shopCode, $distance);
-                    }
-
-                    // Make distance into km.
-                    $distance = $distance / 1000;
-
-                    // Register the rate for bikes
-                    $this->add_rate(array(
-                        'id' => $this->id . 'bike',
-                        'label' => 'Bike shipping',
-                        'cost' => $this->getBikeCost($totalWeight),
-                        'calc_tax' => 'per_item'
-                    ));
-
-                }
-
                 if ($distance < 10) {
+                    $realDistance = $distance;
                     $distance = 10;
                 }
 
@@ -100,32 +73,68 @@ function improvedShippingInit() {
                     'cost' => $this->getCost($totalWeight, $distance),
                     'calc_tax' => 'per_item'
                 ));
+
+                // Check if bicycle shipping can be applied.
+                if ($totalWeight < 5 && $realDistance < 10) {
+                    $url .= '&mode=bicycling';
+
+                    // Check for cache!
+                    if (get_transient('bicycle' . $customerCode . $shopCode) !== false) {
+                        $bikeDistance = get_transient('bicycle' . $customerCode . $shopCode);
+                    } else {
+                        $bikeDistance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
+                        $bikeDistance = $bikeDistance->rows[0]->elements[0]->distance->value;
+                        set_transient('bicycle' . $customerCode . $shopCode, $bikeDistance);
+                    }
+
+                    // Make distance into km.
+                    $bikeDistance = $bikeDistance / 1000;
+
+                    // Register the rate for bikes
+                    $this->add_rate(array(
+                        'id' => $this->id . 'bike',
+                        'label' => 'Bike shipping',
+                        'cost' => $this->getBikeCost($totalWeight),
+                        'calc_tax' => 'per_item'
+                    ));
+                }
             }
 
+            /**
+             * Get the normal shipping cost.
+             *
+             * @param  int $weight
+             * @param  int $distance
+             * @return int
+             */
             private function getCost($weight, $distance)
             {
-                // GÖR OM
                 if ($weight < 1) {
-                    return 30 * $distance;
+                    return 30 * ($distance / 10);
                 } elseif ($weight < 5) {
-                    return 60 * $distance;
+                    return 60 * ($distance / 10);
                 } elseif ($weight < 10) {
-                    return 100 * $distance;
+                    return 100 * ($distance / 10);
                 } elseif ($weight < 20) {
-                    return 200 * $distance;
+                    return 200 * ($distance / 10);
                 }
 
-                return $weight * 100;
+                return ($weight * 10) / ($distance / 10);
             }
 
+            /**
+             * Get the bike shipping cost.
+             *
+             * @param  int $weight
+             * @return int
+             */
             private function getBikeCost($weight)
             {
-                // GÖR OM
                 if ($weight < 1) {
                     return 15;
-                } elseif ($weight < 5) {
-                    return 30;
                 }
+
+                return 30;
             }
         }
     }
