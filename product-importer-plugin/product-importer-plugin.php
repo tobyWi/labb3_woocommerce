@@ -66,7 +66,7 @@ function update_imported_products()
         }
 
         while (($row = fgetcsv($file)) !== false) {
-
+            $id = null;
             // Validate prices.
             if ($row[5] < 0) {
                 continue;
@@ -114,42 +114,40 @@ function update_imported_products()
                 ]
             ]);
 
-            wp_reset_postdata();
-
             // Fix the image.
-            if (filter_var($row[1], FILTER_SANITIZE_URL)) {
-                $upload_dir = wp_upload_dir();
+        //     if (filter_var($row[1], FILTER_SANITIZE_URL)) {
+        //         $upload_dir = wp_upload_dir();
 
-                $image_data = file_get_contents($row[1]);
+        //         $image_data = file_get_contents($row[1]);
 
-                $filename = basename($row[1]);
+        //         $filename = basename($row[1]);
 
-                if (wp_mkdir_p($upload_dir['path'])) {
-                    $temp = $upload_dir['path'] . '/' . $filename;
-                } else {
-                    $temp = $upload_dir['basedir'] . '/' . $filename;
-                }
+        //         if (wp_mkdir_p($upload_dir['path'])) {
+        //             $temp = $upload_dir['path'] . '/' . $filename;
+        //         } else {
+        //             $temp = $upload_dir['basedir'] . '/' . $filename;
+        //         }
 
-                file_put_contents($temp, $image_data);
+        //         file_put_contents($temp, $image_data);
 
-                $wp_filetype = wp_check_filetype($filename, null);
+        //         $wp_filetype = wp_check_filetype($filename, null);
 
-                $attachment = array(
-                    'post_mime_type' => $wp_filetype['type'],
-                    'post_title' => sanitize_file_name($filename),
-                    'post_content' => '',
-                    'post_status' => 'inherit'
-                );
+        //         $attachment = array(
+        //             'post_mime_type' => $wp_filetype['type'],
+        //             'post_title' => sanitize_file_name($filename),
+        //             'post_content' => '',
+        //             'post_status' => 'inherit'
+        //         );
 
-                $attach_id = wp_insert_attachment( $attachment, $filename );
+        //         $attach_id = wp_insert_attachment( $attachment, $filename );
 
-                require_once(ABSPATH . 'wp-admin/includes/image.php');
+        //         require_once(ABSPATH . 'wp-admin/includes/image.php');
 
-                $attach_data = wp_generate_attachment_metadata($attach_id, $file);
+        //         $attach_data = wp_generate_attachment_metadata($attach_id, $file);
 
-                wp_update_attachment_metadata($attach_id, $attach_data);
-                add_post_meta($id, '_thumbnail_id', $attach_id);
-            }
+        //         wp_update_attachment_metadata($attach_id, $attach_data);
+        //         add_post_meta($id, '_thumbnail_id', $attach_id);
+        //     }
         }
 
         fclose($file);
