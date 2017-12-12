@@ -72,7 +72,7 @@ add_action('plugins_loaded', function() {
                 );
             }
 
-            wc_add_notice('Wrong paypal stuff.', 'error');
+            wc_add_notice('PayPal Payment plugin is not enabled.', 'error');
             return;
         }
 
