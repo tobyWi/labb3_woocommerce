@@ -111,8 +111,39 @@ function update_imported_products()
                     '_sale_price' => $row[6],
                 ]
             ]);
+
+            addCsvImage($row[1], $id);
         }
 
         fclose($file);
     }
+}
+
+function addCsvImage($imageUrl, $postId)
+{
+    if (!filter_var($imageUrl, FILTER_SANITIZE_URL)) {
+        return false;
+    }
+
+    $image = file_get_contents($imageUrl);
+
+    $filename = wp_upload_dir()['basedir'] . '/' . rand(1, 100) . basename($imageUrl);
+
+    file_put_contents($filename, $image);
+
+    $attachment = array(
+	   'post_mime_type' => wp_check_filetype(basename($filename), null)['type'],
+	   'post_title'     => $filename,
+	   'post_content'   => '',
+	   'post_status'    => 'inherit'
+    );
+
+    $attachment_id = wp_insert_attachment($attachment, $filename, $postId);
+
+    require_once( ABSPATH . 'wp-admin/includes/image.php' );
+
+    $attachment_data = wp_generate_attachment_metadata( $attachment_id, $filename );
+    wp_update_attachment_metadata( $attachment_id, $attachment_data );
+
+    set_post_thumbnail( $postId, $attachment_id );
 }
