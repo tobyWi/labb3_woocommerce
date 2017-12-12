@@ -89,10 +89,8 @@ function update_imported_products()
             ));
 
             if ($product->have_posts()) {
-               
                 $id = $product->posts[0]->ID;
-                 
-            } 
+            }
 
             // Insert the post.
             $id = wp_insert_post([
@@ -100,28 +98,23 @@ function update_imported_products()
                 'post_title' => $row[2],
                 'post_content' => $row[3],
                 'post_status' => 'publish',
-                'post_type' => 'product'
+                'post_type' => 'product',
+                'meta_input' => [
+                    '_visibility' => 'visible',
+                    '_stock_status' => 'instock',
+                    '_weight' => $row[4],
+                    '_length' => '',
+                    '_width' => '',
+                    '_height' => '',
+                    '_sku' => $row[0],
+                    '_regular_price' => $row[5],
+                    '_sale_price_dates_from' => $row[7],
+                    '_sale_price_dates_to' => $row[8],
+                    '_sale_price' => $row[6],
+                ]
             ]);
-            
 
             wp_reset_postdata();
-
-            // Update metas.
-
-            wp_set_object_terms($id, 'simple', 'product_type');
-
-            update_post_meta($id, '_visibility', 'visible');
-            update_post_meta($id, '_stock_status', 'instock');
-            update_post_meta($id, '_weight', $row[4]);
-            update_post_meta($id, '_length', '');
-            update_post_meta($id, '_width', '');
-            update_post_meta($id, '_height', '');
-            update_post_meta($id, '_sku', $row[0]);
-            update_post_meta($id, '_regular_price', $row[5]);
-
-            update_post_meta($id, '_sale_price_dates_from', $row[7]);
-            update_post_meta($id, '_sale_price_dates_to', $row[8]);
-            update_post_meta($id, '_sale_price', $row[6]);
 
             // Fix the image.
             if (filter_var($row[1], FILTER_SANITIZE_URL)) {
