@@ -92,15 +92,17 @@ function update_imported_products()
                
                 $id = $product->posts[0]->ID;
                  
-            } else {
-                // Insert the post.
-                $id = wp_insert_post([
-                    'post_title' => $row[2],
-                    'post_content' => $row[3],
-                    'post_status' => 'publish',
-                    'post_type' => 'product'
-                ]);
-            }
+            } 
+
+            // Insert the post.
+            $id = wp_insert_post([
+                'ID' => isset($id) ? $id : 0,
+                'post_title' => $row[2],
+                'post_content' => $row[3],
+                'post_status' => 'publish',
+                'post_type' => 'product'
+            ]);
+            
 
             wp_reset_postdata();
 
