@@ -91,22 +91,22 @@ function improvedShippingInit() {
                 $regularDistance = $this->calculateRegularDistance();
 
                 // Register the normal rate.
-                $this->add_rate(array(
+                $this->add_rate([
                     'id' => $this->id,
                     'label' => 'Normal shipping',
                     'cost' => $this->getCost($regularDistance < 10 ? 10 : $regularDistance),
                     'calc_tax' => 'per_item'
-                ));
+                ]);
 
                 // Check if bicycle shipping can be applied.
                 if ($this->weight < 5 && $regularDistance < 10) {
                     // Register the rate for bikes.
-                    $this->add_rate(array(
+                    $this->add_rate([
                         'id' => $this->id . 'bike',
                         'label' => 'Bike shipping',
                         'cost' => $this->getBikeCost($this->calculateBikeDistance()),
                         'calc_tax' => 'per_item'
-                    ));
+                    ]);
                 }
             }
 
