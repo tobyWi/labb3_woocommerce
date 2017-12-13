@@ -85,16 +85,8 @@ function improvedShippingInit() {
              * @param  array  $package
              * @return void
              */
-            public function calculate_shipping( $package = []) {
-                // First, let's calculate the weight of the cart.
-                global $woocommerce;
-                $this->weight = $woocommerce->cart->cart_contents_weight;
-
-                // Then calculate the distance to the customer.
-                $this->customerZipCode = $package['destination']['postcode'];
-                $this->customerZipCode = substr_replace($this->customerZipCode, "%20", 3, 0);
-
-                $this->shopZipCode = substr_replace($this->get_option('shopcode'), "%20", 3, 0);
+            public function calculate_shipping($package = []) {
+                $this->setShippingMeta($package);
 
                 $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$this->shopZipCode}&destinations={$this->customerZipCode}&region=SE&units=metric&key={$this->key}";
 
@@ -119,7 +111,7 @@ function improvedShippingInit() {
                 $this->add_rate(array(
                     'id' => $this->id,
                     'label' => 'Normal shipping',
-                    'cost' => $this->getCost($this->weight, $distance),
+                    'cost' => $this->getCost($distance),
                     'calc_tax' => 'per_item'
                 ));
 
@@ -143,43 +135,57 @@ function improvedShippingInit() {
                     $this->add_rate(array(
                         'id' => $this->id . 'bike',
                         'label' => 'Bike shipping',
-                        'cost' => $this->getBikeCost($this->weight),
+                        'cost' => $this->getBikeCost(),
                         'calc_tax' => 'per_item'
                     ));
                 }
             }
 
             /**
+             * Set shipping meta.
+             *
+             * @param array $package
+             */
+            private function setShippingMeta(array $package)
+            {
+                global $woocommerce;
+                $this->weight = $woocommerce->cart->cart_contents_weight;
+
+                $this->customerZipCode = $package['destination']['postcode'];
+                $this->customerZipCode = substr_replace($this->customerZipCode, "%20", 3, 0);
+
+                $this->shopZipCode = substr_replace($this->get_option('shopcode'), "%20", 3, 0);
+            }
+
+            /**
              * Get the normal shipping cost.
              *
-             * @param  int $weight
              * @param  int $distance
              * @return int
              */
-            private function getCost($weight, $distance)
+            private function getCost($distance)
             {
-                if ($weight < 1) {
+                if ($this->weight < 1) {
                     return 30 * ($distance / 10);
-                } elseif ($weight < 5) {
+                } elseif ($this->weight < 5) {
                     return 60 * ($distance / 10);
-                } elseif ($weight < 10) {
+                } elseif ($this->weight < 10) {
                     return 100 * ($distance / 10);
-                } elseif ($weight < 20) {
+                } elseif ($this->weight < 20) {
                     return 200 * ($distance / 10);
                 }
 
-                return ($weight * 10) / ($distance / 10);
+                return ($this->weight * 10) / ($distance / 10);
             }
 
             /**
              * Get the bike shipping cost.
              *
-             * @param  int $weight
              * @return int
              */
-            private function getBikeCost($weight)
+            private function getBikeCost()
             {
-                if ($weight < 1) {
+                if ($this->weight < 1) {
                     return 15;
                 }
 
