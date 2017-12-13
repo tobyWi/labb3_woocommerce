@@ -88,6 +88,57 @@ function improvedShippingInit() {
             public function calculate_shipping($package = []) {
                 $this->setShippingMeta($package);
 
+                $regularDistance = $this->calculateRegularDistance();
+
+                // Register the normal rate.
+                $this->add_rate(array(
+                    'id' => $this->id,
+                    'label' => 'Normal shipping',
+                    'cost' => $this->getCost($regularDistance < 10 ? 10 : $regularDistance),
+                    'calc_tax' => 'per_item'
+                ));
+
+                // Check if bicycle shipping can be applied.
+                if ($this->weight < 5 && $regularDistance < 10) {
+                    // Register the rate for bikes.
+                    $this->add_rate(array(
+                        'id' => $this->id . 'bike',
+                        'label' => 'Bike shipping',
+                        'cost' => $this->getBikeCost($this->calculateBikeDistance()),
+                        'calc_tax' => 'per_item'
+                    ));
+                }
+            }
+
+            /**
+             * Calculate distance for bike shipping.
+             *
+             * @return int
+             */
+            private function calculateBikeDistance()
+            {
+                $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$this->shopZipCode}&destinations={$this->customerZipCode}&region=SE&units=metric&key={$this->key}&mode=bicycling";
+
+                // Check for cache!
+                if (get_transient('bicycle' . $this->customerZipCode . $this->shopZipCode) !== false) {
+                    $bikeDistance = get_transient('bicycle' . $this->customerZipCode . $this->shopZipCode);
+                } else {
+                    $bikeDistance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
+                    $bikeDistance = $bikeDistance->rows[0]->elements[0]->distance->value;
+                    set_transient('bicycle' . $this->customerZipCode . $this->shopZipCode, $bikeDistance);
+                }
+
+                // Make distance into km.
+                return $bikeDistance / 1000;
+            }
+
+            /**
+             * Calculate the distance for regular shipping.
+             *
+             * @return int
+             */
+            private function calculateRegularDistance()
+            {
                 $url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins={$this->shopZipCode}&destinations={$this->customerZipCode}&region=SE&units=metric&key={$this->key}";
 
                 // Check for cache!
@@ -100,45 +151,7 @@ function improvedShippingInit() {
                 }
 
                 // Make distance into km.
-                $distance = $distance / 1000;
-
-                if ($distance < 10) {
-                    $realDistance = $distance;
-                    $distance = 10;
-                }
-
-                // Register the normal rate
-                $this->add_rate(array(
-                    'id' => $this->id,
-                    'label' => 'Normal shipping',
-                    'cost' => $this->getCost($distance),
-                    'calc_tax' => 'per_item'
-                ));
-
-                // Check if bicycle shipping can be applied.
-                if ($this->weight < 5 && $realDistance < 10) {
-                    $url .= '&mode=bicycling';
-
-                    // Check for cache!
-                    if (get_transient('bicycle' . $this->customerZipCode . $this->shopZipCode) !== false) {
-                        $bikeDistance = get_transient('bicycle' . $this->customerZipCode . $this->shopZipCode);
-                    } else {
-                        $bikeDistance = json_decode(wp_remote_retrieve_body(wp_remote_get($url)));
-                        $bikeDistance = $bikeDistance->rows[0]->elements[0]->distance->value;
-                        set_transient('bicycle' . $this->customerZipCode . $this->shopZipCode, $bikeDistance);
-                    }
-
-                    // Make distance into km.
-                    $bikeDistance = $bikeDistance / 1000;
-
-                    // Register the rate for bikes
-                    $this->add_rate(array(
-                        'id' => $this->id . 'bike',
-                        'label' => 'Bike shipping',
-                        'cost' => $this->getBikeCost(),
-                        'calc_tax' => 'per_item'
-                    ));
-                }
+                return $distance / 1000;
             }
 
             /**
