@@ -6,9 +6,7 @@
 * Authors: Tobias & Jakob
 */
 
-
 function best_selling_products_function( $args ) {
-
 	$args =  [
 		'post_type'			=> 'product',
 		'meta_key' 			=> 'total_sales',
@@ -16,12 +14,9 @@ function best_selling_products_function( $args ) {
 		'posts_per_page'	=> 10
 	];
 
-
 	$loop = new WP_Query($args);
 
-
 	if ( $loop->have_posts() ) {
-
 		echo '
 			<table>
 				<tr>
@@ -32,7 +27,6 @@ function best_selling_products_function( $args ) {
 		';
 
 		while ( $loop->have_posts() ) : $loop->the_post();
-
 			global $product;
 
 			echo '
@@ -42,21 +36,15 @@ function best_selling_products_function( $args ) {
 					<td>' . $product->get_price() . '</td>
 				</tr>
 			';
-			
 		endwhile;
-
 
 		echo '</table>';	
 
-
 		} else {
-
 			echo __( 'No products found' );
-
 		}
 
 		wp_reset_postdata();
-		
 }
 add_shortcode( 'best_sellers', 'best_selling_products_function' );
 
