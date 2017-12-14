@@ -1,6 +1,4 @@
 <?php 
-
-
 /**
 * Plugin Name: Best selling products
 * Authors: Tobias & Jakob
@@ -47,5 +45,3 @@ function best_selling_products_function( $args ) {
 		wp_reset_postdata();
 }
 add_shortcode( 'best_sellers', 'best_selling_products_function' );
-
-
