@@ -38,10 +38,10 @@ function best_selling_products_function( $args ) {
 
 		echo '</table>';	
 
-		} else {
-			echo __( 'No products found' );
-		}
+	} else {
+		echo __( 'No products found' );
+	}
 
-		wp_reset_postdata();
+	wp_reset_postdata();
 }
 add_shortcode( 'best_sellers', 'best_selling_products_function' );
